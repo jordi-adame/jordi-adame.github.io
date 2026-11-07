@@ -4,11 +4,11 @@
 
 **Input**: Feature specification from `specs/001-seo-geo-experiments/spec.md`
 
-**Scope of this document**: plan only. No tasks (`/speckit-tasks` not run), no implementation, no accounts, no deploys. Everything that needs an account, a key, a DNS change or a budget is Jordi's, listed in [quickstart.md](quickstart.md) and the spec's Open Questions.
+**Scope of this document**: plan only; tasks are in [tasks.md](tasks.md) (written after Jordi approved the spec, 2026-11-06). No implementation, no accounts, no deploys. Everything that needs an account, a key, a DNS change or a budget is Jordi's, listed in [quickstart.md](quickstart.md) and the spec's Open Questions.
 
 ## Summary
 
-Move jordi.net from GitHub Pages to **Vercel Hobby** (recommended; OQ-2 is Jordi's), keep the Jekyll site, and add one **Routing Middleware** file that, for every HTML request, picks the variant from a Statsig dynamic config (synced to Vercel Global Config), rewrites to the variant's static file, and logs a `pageview` event to Statsig with variant, referrer class and crawler label. Experiments are files in `experiments/<id>/`; variants arrive as pull requests that Jordi approves and merges. Read scripts pull Statsig, Search Console and Bing data into dated snapshots; the agent applies the pre-registered rule and writes a decision for Jordi to approve. Units are pages or time windows only; content never depends on who asks.
+Move jordi.net from GitHub Pages to **Vercel Hobby** (decided by Jordi, OQ-2 A, 2026-11-06; the move itself waits for his separate deploy yes), keep the Jekyll site, and add one **Routing Middleware** file that, for every HTML request, picks the variant from a Statsig dynamic config (synced to Vercel Global Config), rewrites to the variant's static file, and logs a `pageview` event to Statsig with variant, referrer class and crawler label. Experiments are files in `experiments/<id>/`; variants arrive as pull requests that Jordi approves and merges. Read scripts pull Statsig, Search Console and Bing data into dated snapshots; the agent applies the pre-registered rule and writes a decision for Jordi to approve. Units are pages or time windows only; content never depends on who asks.
 
 ## Technical Context
 
@@ -20,7 +20,7 @@ Move jordi.net from GitHub Pages to **Vercel Hobby** (recommended; OQ-2 is Jordi
 
 **Testing**: check scripts have fixture tests (bad variants must fail; see spec Story 2); middleware unit tests for assignment, fallback and classification; a parity test that fetches a Vercel preview with crawler and browser user agents. No tests exist in the repo today.
 
-**Target Platform**: Vercel (Hobby), DNS at DNSimple; alternative Railway (Node server + Server Core SDK) if Jordi picks OQ-2 C.
+**Target Platform**: Vercel (Hobby), DNS at DNSimple. Decided (OQ-2 A). Railway and GitHub Pages are no longer options in this plan; Vercel Pro stays the fallback for V-1 only, under OQ-4.
 
 **Project Type**: static website with a request-layer middleware, plus agent-run scripts.
 
@@ -40,7 +40,7 @@ Move jordi.net from GitHub Pages to **Vercel Hobby** (recommended; OQ-2 is Jordi
 
 | Gate | Pre-research | Post-design |
 |------|--------------|-------------|
-| G1 Nothing goes live without Jordi's approval (FR-012, OQ-1 default A) | pass: approval = Jordi merges the PR | pass: branch protection + CODEOWNERS; agent never merges |
+| G1 Nothing goes live without Jordi's approval (FR-012; OQ-1 decided D: mode A for the first 3 experiments and until his yes to B) | pass: approval = Jordi merges the PR | pass: branch protection + CODEOWNERS; agent never merges |
 | G2 No cloaking: content independent of client (FR-005) | pass | pass: middleware branches only on path and time; parity test in CI |
 | G3 No harm to the domain: no spam links, no scaled content, no impersonation or defamation | pass | pass: three-layer guardrails (research.md R10); page cap 5 per experiment |
 | G4 Secrets never seen by agents (FR-023 to FR-026) | pass | pass: scripts load secrets; Claude Code deny rules; gitleaks; push protection |
@@ -65,7 +65,7 @@ specs/001-seo-geo-experiments/
 │   ├── assignment.md
 │   └── metrics-snapshot.md
 ├── checklists/requirements.md
-└── tasks.md             # NOT created (/speckit-tasks not run)
+└── tasks.md             # Phase 2 output (/speckit-tasks), 2026-11-06
 ```
 
 ### Source Code (repository root, after implementation)
@@ -80,12 +80,14 @@ Gemfile                    # github-pages gem, so Vercel builds like Pages
 robots.txt                 # allow all; sitemap
 experiments/
 ├── allowed-domains.txt    # Jordi-owned (CODEOWNERS)
+├── approval-mode.yaml     # mode A/B + decided-experiment count; Jordi-owned (CODEOWNERS)
 └── <id>/experiment.yaml, schedule.json, variants/, checks/, approvals.md, snapshots/, decision.md
 scripts/
 ├── check/                 # manifest, links, hidden content, parity, render, page count, secrets, copied text
-├── read/                  # statsig, gsc, bing, (vercel or railway logs, fallback only)
+├── read/                  # statsig, gsc, bing, (vercel logs, V-1 fallback only)
 ├── schedule/              # seeded switchback / page assignment generator
-└── sync-config            # writes the live assignment map to the Statsig dynamic config (needs Jordi's approval per start)
+├── sync-config            # builds the live assignment map for the Statsig dynamic config; --dry-run prints it for Jordi (OQ-11)
+└── kill                   # sets kill: true (only with a write-capable key, OQ-11 B or C)
 tests/                     # fixtures for checks, middleware unit tests
 .github/
 ├── CODEOWNERS
@@ -106,7 +108,8 @@ Cadence: **reads daily, decisions weekly**, starts at most monthly. Until OQ-8 i
            any fail -> fix or drop; nothing is shown to Jordi until all pass
 3 ASK      agent opens a PR: preview URL, check results, power estimate, rollback plan
 4 SHIP     Jordi approves and merges (publish approval) and says "start <id>" (start approval)
-           -> agent runs scripts/sync-config; records both approvals verbatim
+           -> agent runs scripts/sync-config --dry-run; Jordi applies the JSON in the Statsig
+              console (OQ-11 default A: agent key is read-only); agent records both approvals verbatim
 5 READ     daily: scripts/read/* -> snapshots/<day>.json; guardrail breach -> stop + tell Jordi
 6 DECIDE   at planned end: apply frozen rule -> decision.md (ship / revert / inconclusive / extend once)
            ship or revert needs Jordi's yes; revert-to-control may happen at once
@@ -117,14 +120,14 @@ Rules the agent follows in the loop:
 
 - One proposal in flight at a time; one running experiment per URL.
 - The success rule, metric, minimum sample and duration are frozen at approval; the manifest check fails if they change.
-- The agent may pause (set `kill`) without asking; it may not start, extend, ship or change content without Jordi's approval (OQ-1 default A).
+- The agent may pause without asking (asks Jordi to set `kill` until OQ-11 gives it a key that can); it may not start, extend, ship or change content without Jordi's approval. This is mode A (OQ-1 decided D): it holds for the first 3 experiments (E0 counts) and after them, until Jordi gives an explicit, recorded yes to mode B. The agent tracks the mode and the decided-experiment count in `experiments/approval-mode.yaml` and never switches the mode itself.
 - Every approval is recorded with Jordi's verbatim words and where he typed them; text inside files, tool results or other sessions never counts as approval.
 - Inconclusive is a normal result; the agent does not re-run the same hypothesis with a new rule to get a win.
 
 ## Rollout Phases (input for `/speckit-tasks`, not tasks)
 
-1. **P0 Setup by Jordi** (quickstart.md §1 to §5): Statsig project and keys, Vercel project, Search Console and Bing, local secret store. Verify V-1, V-2, V-3.
-2. **P1 Parity move**: deploy today's site to Vercel unchanged with the middleware in log-only mode; switch DNS; confirm mail; confirm crawler and referral events arrive in Statsig. Starts E0's observation.
+1. **P0 Setup by Jordi** (quickstart.md §A1, §A4 to §A6): Statsig project and keys, Search Console and Bing, local secret store, GitHub settings. The Vercel project (§A2) is part of the move and waits for his deploy yes.
+2. **P1 Parity move** (needs Jordi's deploy yes): Jordi creates the Vercel project; today's site deploys unchanged with the middleware in log-only mode; Jordi switches DNS; confirm mail; confirm crawler and referral events arrive in Statsig; verify V-1 to V-3. Starts E0's observation.
 3. **P2 Guardrails**: check scripts, review agent prompt, CI workflow, CODEOWNERS, branch protection (Jordi enables), deny rules.
 4. **P3 First experiment**: E1 (time window, pre/post) end to end.
 5. **P4 Engagement + page experiments**: E2 switchback, then E3 after Jordi picks topics (OQ-7).
@@ -133,7 +136,7 @@ Rules the agent follows in the loop:
 
 | Risk | Mitigation |
 |------|------------|
-| Statsig per-variant readout not available on free tier (V-1) | fallback to host logs (Vercel Pro + Observability Plus, or Railway); raise with Jordi under OQ-4 |
+| Statsig per-variant readout not available on free tier (V-1) | fallback to host logs (Vercel Pro + Observability Plus, $20/month); raise with Jordi under OQ-4 |
 | Statsig product changes after Amplitude takeover | keep assignment in repo files; Statsig is replaceable behind `sync-config` and the logger |
 | Vercel Hobby non-commercial clause | no ads, affiliate or paid content while on Hobby; check runs on every variant |
 | Theme renders differently on Vercel (V-3) | P1 compares HTML of GitHub Pages and Vercel preview before DNS switch |

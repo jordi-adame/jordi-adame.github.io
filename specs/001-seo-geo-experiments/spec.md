@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-06
 
-**Status**: Draft (specified, clarified, planned; tasks and implementation not started)
+**Status**: Approved by Jordi 2026-11-06 19:11 (specified, clarified, planned, tasks written; implementation not started)
 
 **Input**: Jordi's goal: "create 'random' versions of my website and only optimize for seo/geo traffic or engagement". Variants can be anything: "a funny ascii animation, content about x topic, links to other sites, idk". "The idea is that you, an agent, will iterate on what to publish on jordi.net." Use Statsig experiments. The site deploys from GitHub today; Jordi is open to Vercel or Railway.
 
@@ -30,7 +30,7 @@ Terms used throughout:
 
 - Q: What is the unit of randomization for experiments whose metric comes from search engines or AI engines? → A: A page (URL path) or a time window, never a single visitor. Every client, human or crawler, gets the same content for the same URL at the same time.
 - Q: Do crawlers ever get different content from humans? → A: No. Content never depends on user agent, IP or bot status. Bot detection is used only to label requests in measurement, never to choose content.
-- Q: How much may the agent publish without asking, until Jordi decides OQ-1? → A: Nothing. Every variant needs Jordi's publishing approval before it goes live, and every experiment start, ship and stop needs it too. The agent may draft, lint and preview freely.
+- Q: How much may the agent publish without asking? → A: Nothing, under mode A. Every variant needs Jordi's publishing approval before it goes live, and every experiment start, extension and ship needs it too; an emergency stop does not. The agent may draft, lint and preview freely. Jordi decided OQ-1 (option D) on 2026-11-06: mode A for the first 3 experiments and afterwards until his explicit yes to mode B.
 - Q: Where do secrets live? → A: Only in the hosting provider's encrypted environment variables and in Jordi's local secret store (outside the repo). Jordi places every secret himself. Agents never print, log, echo or commit secret values; they may reference secrets by name only.
 - Q: Do human visitors get a tracking cookie or persistent ID? → A: No. Page-level and time-window units need no visitor ID, so measurement is per pageview and anonymous. This avoids a consent banner and keeps the site as light as it is today.
 
@@ -139,13 +139,14 @@ Every experiment, variant, approval, check result, data snapshot and decision is
 - **FR-006**: A URL MUST belong to at most one running experiment.
 - **FR-007**: When a variant lives on its own URL, that URL MUST declare the original page as its canonical, and any redirect between variant and original MUST be temporary.
 - **FR-008**: If the experiment platform cannot be reached, every URL MUST serve the control.
-- **FR-009**: Jordi and the agent MUST be able to stop any experiment; all its URLs MUST serve the control within 10 minutes.
+- **FR-009**: Jordi MUST be able to stop any experiment; all its URLs MUST serve the control within 10 minutes. The agent MUST be able to stop too once it holds a key that can set the kill flag (OQ-11); until then it asks Jordi to stop at once and records the request.
 
 **Guardrails**
 
 - **FR-010**: Before Jordi is asked to approve, every variant MUST pass automated checks for: impersonation of any person or organization; claims about named real people or companies without a cited source; outbound links outside an allowed-domain list Jordi controls; hidden text or links; different content for crawlers and humans; more than a set number of new pages per experiment (default 5); broken page (invalid markup, missing title, failed render); and secret-like strings.
 - **FR-011**: A variant that fails any check MUST NOT be offered for approval or published. The failure reason MUST be recorded.
-- **FR-012**: Nothing MUST go live on jordi.net without Jordi's publishing approval for that exact variant, until Jordi decides otherwise (OQ-1). Experiment start, ship and stop-to-ship decisions also need his approval; an emergency stop does not.
+- **FR-012**: Nothing MUST go live on jordi.net without Jordi's publishing approval for that exact variant. Experiment start, extension and ship decisions also need his approval; an emergency stop does not. Approval mode (OQ-1, decided: D): the first 3 experiments run on jordi.net (E0 counts) use mode A: every variant publish, experiment start, extension and ship needs Jordi's approval. Mode A stays in force after those 3 until Jordi gives a separate, explicit, recorded yes to move to mode B; no count, metric or elapsed time moves it on its own. Under mode B (only after that yes), variants in the pre-approved classes of OQ-1 B publish with a notice; new topics, outbound links and new pages still need approval.
+- **FR-012a**: The system MUST record the approval mode in force and the count of decided experiments, and MUST refuse to publish without an approval while the mode is A.
 - **FR-013**: The system MUST NOT add outbound links that are paid, reciprocal-for-exchange, or placed only to pass ranking signals; any outbound link that is not editorial MUST carry the appropriate rel qualifier (`nofollow` or `sponsored`).
 - **FR-014**: Variants MUST NOT copy text from other sites beyond short quotations with attribution.
 - **FR-015**: The site MUST keep identifying itself as Jordi Adame's personal site on the home page in every variant, unless Jordi decides otherwise (OQ-5).
@@ -208,12 +209,12 @@ All four use page or time-window units, keep the bio on the home page, and need 
 
 ## Open Questions for Jordi
 
-These are Jordi's decisions. Each has options and a recommendation; nothing here is decided. Until he answers, the default in the last column applies.
+These are Jordi's decisions. Each has options and a recommendation. OQ-1 and OQ-2 were decided by Jordi on 2026-11-06 (main chat menu, 19:12); OQ-3 to OQ-10 stay on the default in the last column, which applies until he answers.
 
-| Id | Question | Options | Recommendation | Default until decided |
+| Id | Question | Options | Recommendation | Decision / default until decided |
 |----|----------|---------|----------------|-----------------------|
-| OQ-1 | How much may an agent publish later without asking each time? | A: ask for every variant, start and ship. B: pre-approved classes publish with a notice (layout and visual tweaks, rewording of existing bio facts, ASCII art); new topics, outbound links and new pages still ask. C: anything that passes the guardrails publishes, with a weekly digest and veto. D: ramp: A for the first 3 experiments, then B after Jordi's explicit yes. | D | A (ask every time) |
-| OQ-2 | Which host? | A: Vercel Hobby (free; personal non-commercial use). B: Vercel Pro (about $20/month; longer logs, log drains). C: Railway (about $5/month plus usage; full logs, a server to maintain). D: stay on GitHub Pages (time-window experiments by scheduled rebuilds only; no request logs, so no AI-crawler data). | A, move to B only if log retention proves too short (see research.md §R1) | GitHub Pages, no change |
+| OQ-1 | How much may an agent publish later without asking each time? | A: ask for every variant, start and ship. B: pre-approved classes publish with a notice (layout and visual tweaks, rewording of existing bio facts, ASCII art); new topics, outbound links and new pages still ask. C: anything that passes the guardrails publishes, with a weekly digest and veto. D: ramp: A for the first 3 experiments, then B after Jordi's explicit yes. | D | **Decided 2026-11-06: D.** Mode A for the first 3 experiments; moving to B needs Jordi's explicit yes later (FR-012). |
+| OQ-2 | Which host? | A: Vercel Hobby (free; personal non-commercial use). B: Vercel Pro (about $20/month; longer logs, log drains). C: Railway (about $5/month plus usage; full logs, a server to maintain). D: stay on GitHub Pages (time-window experiments by scheduled rebuilds only; no request logs, so no AI-crawler data). | A, move to B only if log retention proves too short (see research.md §R1) | **Decided 2026-11-06: A, Vercel Hobby.** The move itself (Vercel project, DNS) waits for Jordi's separate deploy yes. Until then the site stays on GitHub Pages. |
 | OQ-3 | Which accounts own the services? | A: new Statsig, Vercel/Railway projects under Jordi's personal accounts. B: under an existing company or team account. | A | none created |
 | OQ-4 | Monthly budget ceiling? | A: $0 (free tiers only). B: up to $25. C: up to $50. | A to start; B if logs or events need a paid tier | $0 |
 | OQ-5 | How far may variants move away from "Jordi's personal site"? | A: bio always on `/`; variants add around it and on new paths. B: `/` may change freely; bio kept on `/about`. C: anything anywhere. | A | A |
@@ -222,6 +223,7 @@ These are Jordi's decisions. Each has options and a recommendation; nothing here
 | OQ-8 | Where and how often does the agent run? | A: Jordi starts a session when he wants (manual). B: a scheduled cloud routine weekly. C: a scheduled GitHub Action daily for reads only, weekly agent session for decisions. | C once OQ-1 allows; A until then | A |
 | OQ-9 | Statsig was acquired by Amplitude on 2026-05-05 (research.md §R3). Event data (paths, referrer class, bot names; no IPs or visitor IDs) would go to Amplitude-owned infrastructure. Use it as planned? | A: yes, as asked. B: yes, but review again if Amplitude announces a Statsig sunset or pricing change. C: use another experiment tool. | B (assignment lives in repo files, so Statsig stays replaceable) | A, as Jordi asked |
 | OQ-10 | Which AI crawlers may fetch the site? | A: all, as today (no robots.txt). B: AI-search and user-triggered bots yes, training crawlers (GPTBot, ClaudeBot, CCBot, meta-externalagent) no. C: none. | A (GEO needs the fetches; the content is public bio facts) | A (today's state) |
+| OQ-11 | Found while writing tasks: the agent's Statsig key is read-only (research.md §R9), so it cannot flip the kill flag or write the assignment config itself. Give it write access? | A: no; Jordi applies every config change and every stop in the Statsig console (the agent prepares the JSON). B: a second Statsig member with write role for the agent, its personal key in the local secret file, used only by `scripts/sync-config` and `scripts/kill`. C: as B, but only for `kill`; config changes stay with Jordi. | C (fast stops without letting the agent start things) | A |
 
 ## Assumptions
 
@@ -236,8 +238,8 @@ These are Jordi's decisions. Each has options and a recommendation; nothing here
 
 | Brief question | Answer in short | Detail |
 |----------------|-----------------|--------|
-| 1. Hosting | Recommend Vercel (Hobby to start): edge assignment before HTML is sent, Statsig adapter, request logs; DNS change at DNSimple keeps MX. Railway works but means running a server; GitHub Pages cannot assign per request or show logs. | research.md §R1, plan.md |
+| 1. Hosting | Decided: Vercel Hobby (OQ-2 A); the move waits for Jordi's deploy yes: edge assignment before HTML is sent, Statsig adapter, request logs; DNS change at DNSimple keeps MX. Railway works but means running a server; GitHub Pages cannot assign per request or show logs. | research.md §R1, plan.md |
 | 2. SEO-safe design | Page and time-window units only, same content for every client, canonicals and temporary redirects for variant URLs, no UA-based content, bots labeled not targeted. | research.md §R2, FR-003 to FR-009 |
 | 3. Metrics and sources | Statsig events for engagement, Search Console and Bing for search, referrer parsing for AI referrals, host request logs for AI crawlers; daily reads, weekly decisions, simple pre-registered rules. | research.md §R4 to §R8 |
-| 4. Agent loop | Propose, check, ask, ship, read, decide; weekly; guardrails enforced by automated checks plus Jordi's approval. | plan.md "Agent loop", FR-010 to FR-015 |
+| 4. Agent loop | Propose, check, ask, ship, read, decide; weekly; guardrails enforced by automated checks plus Jordi's approval (mode A for the first 3 experiments and until his yes to B). | plan.md "Agent loop", FR-010 to FR-015 |
 | 5. Secrets | Host env vars and Jordi's local secret store; names only in the repo; secret scanning; agents never see values. | research.md §R9, FR-023 to FR-026 |

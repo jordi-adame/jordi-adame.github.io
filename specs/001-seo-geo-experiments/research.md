@@ -13,7 +13,7 @@ Research date: 2026-11-06. Sources are vendor docs fetched that day unless marke
 
 ## R1. Hosting: GitHub Pages vs Vercel vs Railway
 
-**Decision**: Recommend **Vercel Hobby** to start, with Routing Middleware assigning variants before HTML is sent and logging every pageview (crawlers included) to Statsig. Move to Vercel Pro only if the Statsig readout path (R3, V-1) fails and host logs are needed. Railway is the fallback if Jordi prefers a plain server. This is Jordi's choice (OQ-2); until he decides, nothing moves.
+**Decision**: Recommend **Vercel Hobby** to start, with Routing Middleware assigning variants before HTML is sent and logging every pageview (crawlers included) to Statsig. Move to Vercel Pro only if the Statsig readout path (R3, V-1) fails and host logs are needed. Railway is the fallback if Jordi prefers a plain server. **Jordi decided OQ-2 A (Vercel Hobby) on 2026-11-06**; the move itself waits for his separate deploy yes.
 
 **Rationale**:
 
@@ -191,7 +191,7 @@ Purpose matters for interpretation: AI-search and user-triggered fetches are lea
 - Project `.claude/settings.json` deny rules: `Read(~/.config/jordi-net/**)`, `Bash(cat ~/.config/jordi-net/*)`, `Bash(env)`, `Bash(printenv*)`, `Bash(vercel env pull*)`; scripts redact any value matching a secret pattern in their output.
 - Pre-commit secret scan (gitleaks) and GitHub secret scanning with push protection (free for public repos; Jordi enables it).
 - Agents never ask Jordi to paste a secret into chat; setup steps tell him to paste into the provider UI or the local file.
-- A leaked key: Jordi rotates it in the provider; the agent sets `kill` and waits for his confirmation (spec edge case).
+- A leaked key: Jordi rotates it in the provider; `kill` is set (by Jordi, or by the agent if OQ-11 gave it a key that can) and experiments wait for his confirmation (spec edge case).
 
 Sources: https://docs.statsig.com/sdk-keys/api-keys · https://vercel.com/kb/guide/how-do-i-use-a-vercel-api-access-token · https://vercel.com/docs/api · https://docs.railway.com/integrations/api
 

@@ -117,6 +117,16 @@ File: `experiments/<id>/decision.md`
 
 File: `experiments/allowed-domains.txt`, one domain per line, edited only by Jordi (enforced by CODEOWNERS and by the check refusing a list changed in the same PR as a variant).
 
+## ApprovalMode
+
+File: `experiments/approval-mode.yaml`, owned by Jordi (CODEOWNERS).
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `mode` | enum `A` / `B` | starts `A` (OQ-1 decided D); changes to `B` only in a PR Jordi merges that quotes his explicit yes |
+| `decided_experiments` | int | count of experiments in status `decided`; informational, never switches the mode |
+| `mode_b_yes` | Approval ref or null | required when `mode: B` |
+
 ## PageviewEvent (in Statsig, not in the repo)
 
 Logged server-side for every HTML request to an experiment URL, and for every crawler request to any URL.

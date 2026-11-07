@@ -1,6 +1,6 @@
 # Contract: Request-Time Assignment
 
-Runs in the host's request layer (Vercel Routing Middleware in the recommended setup; a Node server on Railway in the alternative) for every HTML request.
+Runs in Vercel Routing Middleware (hosting decided: OQ-2 A, Vercel Hobby) for every HTML request.
 
 ## Input
 

@@ -6,7 +6,8 @@ Ground rules for every step:
 
 - Paste keys only into the provider's own settings page or into your local secret file (§A5). Never into a chat, an issue, a PR or a commit.
 - Do the steps in order. §A3 (DNS) is the only step visitors can notice, and it waits until the parity check in Part B passes.
-- Choices that are yours (OQ-1 to OQ-8 in [spec.md](spec.md)) are marked **(your call)**.
+- Choices that are still yours (OQ-3 to OQ-10 in [spec.md](spec.md)) are marked **(your call)**. OQ-1 (approval mode D) and OQ-2 (Vercel Hobby) are decided.
+- §A2 and §A3 are the hosting move. Do them only when you give the deploy yes.
 
 ---
 
@@ -32,9 +33,9 @@ Ground rules for every step:
 8. Put the read key into your local secret file (§A5) as `STATSIG_CONSOLE_API_KEY`.
 9. Check for switchback support (V-2): open **New Experiment > Advanced Settings > Experiment Type**. Note whether **Switchback Test** is offered. If it says to contact support, you can ask them to enable randomized switchback bucketing. This step is optional.
 
-### A2. Vercel (about 20 minutes; only if you pick Vercel under OQ-2)
+### A2. Vercel (about 20 minutes; hosting decided, OQ-2 A; do this when you give the deploy yes)
 
-1. Sign up at https://vercel.com on the **Hobby** plan with "Continue with GitHub". Hobby is free and limited to non-commercial personal use **(your call, OQ-2 and OQ-4)**.
+1. Sign up at https://vercel.com on the **Hobby** plan with "Continue with GitHub". Hobby is free and limited to non-commercial personal use.
 2. Choose **Add New > Project** and import `jordi-adame/jordi-adame.github.io`.
    - Framework preset: **Jekyll**.
    - Production branch: `master`.
@@ -101,7 +102,7 @@ A password manager CLI works too, as long as it exports the same variable names 
 1. Open **Settings > Code security** and turn on **Secret scanning** and **Push protection**.
 2. Open **Settings > Branches** and add a protection rule for `master`. Require a pull request and a review from Code Owners. The implementation adds a `CODEOWNERS` file naming you.
 
-### A7. Railway instead of Vercel (only if you pick OQ-2 C)
+### A7. Railway instead of Vercel (not used: OQ-2 decided A; kept for reference only)
 
 1. Sign up at https://railway.com on **Hobby** ($5/month, includes $5 of usage).
 2. Create a project from the GitHub repo and enable autodeploy from `master`.
