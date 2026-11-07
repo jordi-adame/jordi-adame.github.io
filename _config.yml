@@ -5,6 +5,13 @@ theme: jekyll-theme-midnight
 # is set, so the defaults (Gemfile, node_modules, vendor/...) are repeated here.
 exclude:
   - specs/
+  - experiments/
+  - scripts/
+  - middleware.ts
+  - package.json
+  - package-lock.json
+  - tsconfig.json
+  - vercel.json
   - CLAUDE.md
   - AGENTS.md
   - README.md
