@@ -58,7 +58,7 @@ These are at the repository root, as in plan.md: `middleware.ts`, `lib/`, `scrip
   - `vercel.json`
   - `.github/`
   - `.claude/settings.json`
-- [ ] T008 [P] Create `experiments/allowed-domains.txt`, seeded with OQ-6 default A: the seven employer domains linked from `index.html` today, plus Jordi's own profile domains once he lists them. Flag to Jordi that `index.html` links `https://pickwin.nmx`, which looks like a typo for `pickwin.mx`.
+- [ ] T008 [P] Create `experiments/allowed-domains.txt`, seeded with OQ-6 default A: the seven employer domains linked from `index.html` today, plus Jordi's own profile domains once he lists them. List `pickwin.mx`, not the typo `pickwin.nmx` (Jordi decided 2026-11-06 20:04 to fix the link; T061 does it).
 - [ ] T009 [P] Create `experiments/approval-mode.yaml` with `mode: A`, `decided_experiments: 0` and `mode_b_yes: null`. Its rules (data-model.md ApprovalMode):
   - OQ-1 is decided D.
   - The mode changes to `B` only in a PR Jordi merges that quotes his explicit yes.
@@ -105,7 +105,14 @@ These are at the repository root, as in plan.md: `middleware.ts`, `lib/`, `scrip
 - [ ] T020 [P] Write tests in `tests/schedule/test_generate.py`, then implement `scripts/schedule/generate.py`:
   - seeded paired switchback, so each pair of UTC days holds both arms in random order, written to `experiments/<id>/schedule.json`;
   - seeded page assignment written to `page_assignment`.
-- [ ] T021 Implement `scripts/sync-config.py`. It builds the `site_experiments` JSON from the running manifests. `--dry-run` prints the JSON and a diff for Jordi. Without `--dry-run`, it writes through the Statsig Console API, which works only with a write-capable key (OQ-11 B). Under the OQ-11 default A, the script never writes.
+- [ ] T021 Implement `scripts/sync-config.py`. It builds the `site_experiments` JSON from the running manifests. It prints the JSON and a diff for Jordi, who applies it in the Statsig console. It has no write path (OQ-11 decided C: config changes and starts stay with Jordi).
+
+- [ ] T072 [P] Write `tests/kill/test_kill.py`, then implement `scripts/kill.py` (added after OQ-11 decided C, 2026-11-06 20:04):
+  - it loads only `STATSIG_KILL_KEY` through `scripts/lib/secrets.py`;
+  - it sets `kill: true` on the dynamic config `site_experiments` and nothing else;
+  - it refuses `kill: false`, other configs and other fields;
+  - it appends the stop to `experiments/<id>/approvals.md` as `what: stop` with the reason;
+  - a CI check fails if any file other than `scripts/kill.py` and `scripts/lib/secrets.py` names `STATSIG_KILL_KEY`.
 
 **Checkpoint**: `npm test` and `pytest` pass. The middleware runs locally in log-only mode. Nothing is deployed.
 
@@ -161,6 +168,7 @@ These are at the repository root, as in plan.md: `middleware.ts`, `lib/`, `scrip
 - [ ] T035 [US4] **Jordi does**: set up Statsig (quickstart §A1): project `jordi-net`, custom IDs `pagePath` and `windowId`, dynamic config `site_experiments`, a read-only Console API key in the local secret file. He also notes whether switchback is offered (V-2).
 - [ ] T036 [P] [US4] **Jordi does**: set up Search Console and Bing (quickstart §A4): Domain property via a TXT record at DNSimple, a service account as a Restricted user, the Bing API key. The new TXT record is the only DNS change here; the SPF record stays as it is.
 - [ ] T037 [P] [US4] **Jordi does**: create the local secret file `~/.config/jordi-net/secrets.env` (quickstart §A5).
+- [ ] T071 [US4] **Jordi does** (added after OQ-11 decided C, 2026-11-06 20:04): create a write-capable Statsig Console API key for `scripts/kill` and place it in `~/.config/jordi-net/secrets.env` as `STATSIG_KILL_KEY` (quickstart §A1 step 8a). No agent sees or handles the value.
 - [ ] T038 [US4] **Jordi does, needs Jordi's deploy yes**:
   - create the Vercel Hobby project from the repo (§A2 steps 1 to 2);
   - connect the Statsig Marketplace integration in Connect mode (§A2 step 4);
@@ -178,7 +186,7 @@ These are at the repository root, as in plan.md: `middleware.ts`, `lib/`, `scrip
   - After: wait for "Valid Configuration" and send a second test email (B9).
   - Rollback is in §A3 step 8.
 - [ ] T043 [US4] After T042, confirm that https://jordi.net and https://www.jordi.net come from Vercel, that the certificate is valid, and that `pageview` events with crawler labels arrive in Statsig. Record the results in `experiments/setup-log.md`.
-- [ ] T044 [US4] **Jordi does; live site**: run kill-switch check B3. He sets `kill: true` in `site_experiments` in the Statsig console, the agent times propagation (10 minutes at most), then Jordi sets it back.
+- [ ] T044 [US4] **Jordi does; live site**: run kill-switch check B3. The agent runs `scripts/kill` (T072) to set `kill: true`, times propagation (10 minutes at most), then Jordi sets it back in the Statsig console. Needs T071.
 - [ ] T045 [US4] **Jordi does, after one week on Vercel**: unpublish GitHub Pages (quickstart §A3 step 9).
 
 **Checkpoint**: jordi.net runs on Vercel in log-only mode. E0 observation data starts flowing.
@@ -229,14 +237,14 @@ These are at the repository root, as in plan.md: `middleware.ts`, `lib/`, `scrip
 - [ ] T056 [US1] Implement `scripts/approvals.py`. It appends to `experiments/<id>/approvals.md` with Jordi's verbatim words, the place and the time. While `approval-mode.yaml` has `mode: A`, it refuses to mark a variant publishable without an approval (FR-012a).
 - [ ] T057 [US1] Write the loop runbook `experiments/README.md`, using the agent loop from plan.md. Mode A rules:
   - Every publish, start, extension and ship asks Jordi.
-  - An emergency stop does not need his approval. Under OQ-11 default A, the agent asks Jordi to set `kill`.
+  - An emergency stop does not need his approval. The agent stops with `scripts/kill` (OQ-11 decided C) and tells Jordi; only Jordi turns `kill` off, and config changes and starts stay with him.
   - Mode A stays after 3 experiments until Jordi's explicit yes to B.
 - [ ] T058 [US1] Draft the E0 proposal `experiments/E0-llms-txt/experiment.yaml` (unit `none`) and its content files `llms.txt` and `about.md`, using only facts already on `index.html`. Run `scripts/check/run_all.py` and open the PR.
 - [ ] T059 [US1] **Jordi does; live site**: approve and merge the E0 PR, then say "start E0". This is the publish and start approval; record it with T056.
 - [ ] T060 [US1] Read E0 for 4 weeks, then write `experiments/E0-llms-txt/decision.md`. **Jordi approves** keeping or dropping the files. Dropping them is a **live site** merge, done by Jordi.
-- [ ] T061 [US1] Draft the E1 proposal `experiments/E1-enriched-bio/`, including the time-window schedule, a 4-week pre-period from Search Console, and the variant `x/E1-enriched-bio/v1-bio/index.html` with Person schema. **Jordi supplies** the facts: roles, years, profile links, and whether to fix the `pickwin.nmx` link. Run the checks and open the PR with a power estimate.
-- [ ] T062 [US1] **Jordi does; live site**: approve and merge the E1 PR, then say "start E1". Run `scripts/sync-config.py --dry-run`; **Jordi applies** the JSON in the Statsig console (OQ-11 default A). Record both approvals.
-- [ ] T063 [US1] Run E1 for 6 weeks with daily reads (T052). If a guardrail is breached, ask Jordi to set `kill` and record the request.
+- [ ] T061 [US1] Draft the E1 proposal `experiments/E1-enriched-bio/`, including the time-window schedule, a 4-week pre-period from Search Console, and the variant `x/E1-enriched-bio/v1-bio/index.html` with Person schema. **Jordi supplies** the facts: roles, years, profile links. The same PR changes the Pickwin link from `https://pickwin.nmx` to `https://pickwin.mx` in `index.html` and in the variant (Jordi decided 2026-11-06 20:04: fix). It goes live only through Jordi's merge yes, like the rest of E1. Run the checks and open the PR with a power estimate.
+- [ ] T062 [US1] **Jordi does; live site**: approve and merge the E1 PR, then say "start E1". Run `scripts/sync-config.py --dry-run`; **Jordi applies** the JSON in the Statsig console (OQ-11 decided C). Record both approvals.
+- [ ] T063 [US1] Run E1 for 6 weeks with daily reads (T052). If a guardrail is breached, run `scripts/kill` (T072), record the stop and tell Jordi at once.
 - [ ] T064 [US1] At the E1 planned end, run `scripts/analyze/rules.py`. **Jordi approves** ship, revert or the one extension.
   - On ship: the enriched bio moves into `index.html`. **Live site**; Jordi merges.
   - Clean up the losing variant's files.
@@ -274,7 +282,7 @@ These are at the repository root, as in plan.md: `middleware.ts`, `lib/`, `scrip
 - Foundational (Phase 2) depends on Setup.
 - US2 guardrails (Phase 3) depend on Foundational. They need no hosting and can run before the move.
 - US4 setup and move (Phase 4):
-  - T035 to T037 can start at any time; they are Jordi's.
+  - T035 to T037 and T071 can start at any time; they are Jordi's. T071 needs T035 and T037.
   - T038, T039 and T042 wait for Jordi's deploy yes.
   - T039 needs Phase 2 and Phase 3 complete.
 - US3 reads (Phase 5) depend on T043 (live events) and T035 to T037 (keys).
@@ -319,15 +327,16 @@ Tests come first and must fail before implementation. Manifest and classifier li
 | T035 | Jordi does (Statsig) | no |
 | T036 | Jordi does (Search Console, Bing, a TXT record at DNSimple) | no (DNS TXT only) |
 | T037 | Jordi does (local secret file) | no |
+| T071 | Jordi does (Statsig kill key into the secret file) | no |
 | T038 | Jordi does, needs Jordi's deploy yes (Vercel project) | no (`*.vercel.app` only) |
 | T039 | needs Jordi's deploy yes, Jordi merges | yes |
 | T042 | Jordi does, needs Jordi's deploy yes (DNS switch) | yes |
-| T044 | Jordi does (kill-switch check) | yes, briefly |
+| T044 | Jordi does (kill-switch check; agent runs `scripts/kill`, Jordi turns it off) | yes, briefly |
 | T045 | Jordi does (unpublish Pages) | no (after the move) |
 | T053 | Jordi decides budget (OQ-4) if V-1 fails | no |
 | T059 | Jordi approves and merges E0, says start | yes |
 | T060 | Jordi approves the E0 decision | yes if files are dropped |
-| T061 | Jordi supplies bio facts | no |
+| T061 | Jordi supplies bio facts; PR fixes the Pickwin link (live only via his merge, T062) | no |
 | T062 | Jordi approves and merges E1, says start, applies config | yes |
 | T064 | Jordi approves the E1 decision, merges on ship | yes |
 | T067 | Jordi approves and merges E2, says start | yes |

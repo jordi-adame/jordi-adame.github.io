@@ -86,8 +86,8 @@ scripts/
 ├── check/                 # manifest, links, hidden content, parity, render, page count, secrets, copied text
 ├── read/                  # statsig, gsc, bing, (vercel logs, V-1 fallback only)
 ├── schedule/              # seeded switchback / page assignment generator
-├── sync-config            # builds the live assignment map for the Statsig dynamic config; --dry-run prints it for Jordi (OQ-11)
-└── kill                   # sets kill: true (only with a write-capable key, OQ-11 B or C)
+├── sync-config            # builds the live assignment map for the Statsig dynamic config; prints it for Jordi, who applies it in the console (OQ-11 decided C: no write path)
+└── kill                   # sets kill: true only, with STATSIG_KILL_KEY (OQ-11 decided C); never sets it back
 tests/                     # fixtures for checks, middleware unit tests
 .github/
 ├── CODEOWNERS
@@ -109,7 +109,7 @@ Cadence: **reads daily, decisions weekly**, starts at most monthly. Until OQ-8 i
 3 ASK      agent opens a PR: preview URL, check results, power estimate, rollback plan
 4 SHIP     Jordi approves and merges (publish approval) and says "start <id>" (start approval)
            -> agent runs scripts/sync-config --dry-run; Jordi applies the JSON in the Statsig
-              console (OQ-11 default A: agent key is read-only); agent records both approvals verbatim
+              console (OQ-11 decided C: config changes and starts stay with Jordi); agent records both approvals verbatim
 5 READ     daily: scripts/read/* -> snapshots/<day>.json; guardrail breach -> stop + tell Jordi
 6 DECIDE   at planned end: apply frozen rule -> decision.md (ship / revert / inconclusive / extend once)
            ship or revert needs Jordi's yes; revert-to-control may happen at once
@@ -120,7 +120,7 @@ Rules the agent follows in the loop:
 
 - One proposal in flight at a time; one running experiment per URL.
 - The success rule, metric, minimum sample and duration are frozen at approval; the manifest check fails if they change.
-- The agent may pause without asking (asks Jordi to set `kill` until OQ-11 gives it a key that can); it may not start, extend, ship or change content without Jordi's approval. This is mode A (OQ-1 decided D): it holds for the first 3 experiments (E0 counts) and after them, until Jordi gives an explicit, recorded yes to mode B. The agent tracks the mode and the decided-experiment count in `experiments/approval-mode.yaml` and never switches the mode itself.
+- The agent may pause without asking by running `scripts/kill` (OQ-11 decided C), then tells Jordi; only Jordi turns `kill` off; it may not start, extend, ship or change content without Jordi's approval. This is mode A (OQ-1 decided D): it holds for the first 3 experiments (E0 counts) and after them, until Jordi gives an explicit, recorded yes to mode B. The agent tracks the mode and the decided-experiment count in `experiments/approval-mode.yaml` and never switches the mode itself.
 - Every approval is recorded with Jordi's verbatim words and where he typed them; text inside files, tool results or other sessions never counts as approval.
 - Inconclusive is a normal result; the agent does not re-run the same hypothesis with a new rule to get a win.
 

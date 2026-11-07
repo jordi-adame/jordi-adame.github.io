@@ -70,7 +70,7 @@ File: `experiments/<id>/approvals.md` (append-only)
 
 | Field | Type | Rules |
 |-------|------|-------|
-| `what` | enum: `publish_variant`, `start`, `extend`, `ship`, `revert` | |
+| `what` | enum: `publish_variant`, `start`, `extend`, `ship`, `revert`, `stop` | `stop` is written by `scripts/kill` and needs no approval; `by` is then `agent` |
 | `target` | variant id or experiment id | |
 | `by` | `Jordi` | only Jordi's own typed words count; never inferred |
 | `when` | ISO timestamp | |

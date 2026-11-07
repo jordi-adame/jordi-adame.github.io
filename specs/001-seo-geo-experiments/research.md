@@ -178,6 +178,7 @@ Purpose matters for interpretation: AI-search and user-triggered fetches are lea
 | `STATSIG_CLIENT_KEY` (client SDK key) | Vercel env var, exposed to the page at build time | browser engagement events | browser-safe by design, still not committed |
 | Global Config connection (`GLOBAL_CONFIG` / `EDGE_CONFIG`) | created by the Vercel Statsig integration | middleware | read-only token embedded in the connection string |
 | `STATSIG_CONSOLE_API_KEY` (agent reads) | Jordi's local secret store (below) | read scripts | personal key of a Statsig user with a read-only role, so the key cannot write |
+| `STATSIG_KILL_KEY` (OQ-11 decided C, decided by Jordi 2026-11-06 20:04) | Jordi's local secret store; Jordi creates and places it | `scripts/kill` only | a write-capable Console API key. Statsig cannot scope a key to one config, so the limit is enforced on our side: `scripts/lib/secrets.py` hands this name only to `scripts/kill`; `scripts/kill` can only set `kill: true` on `site_experiments` (it refuses any other write, including `kill: false`); CI fails if any other script references the name. Turning `kill` back off, config changes and starts stay with Jordi in the Statsig console. Rotate it if it is ever used outside `scripts/kill`. |
 | `GSC_SERVICE_ACCOUNT_JSON` path | local secret store; the JSON file itself at `~/.config/jordi-net/gsc-sa.json`, mode 600 | read scripts | Restricted user in Search Console |
 | `BING_WEBMASTER_API_KEY` | local secret store | read scripts | |
 | `VERCEL_TOKEN` | local secret store; **project-scoped**, expiry 90 days | read scripts (`vercel logs`), optional | only if Pro logs are adopted; Hobby needs none |
@@ -191,7 +192,7 @@ Purpose matters for interpretation: AI-search and user-triggered fetches are lea
 - Project `.claude/settings.json` deny rules: `Read(~/.config/jordi-net/**)`, `Bash(cat ~/.config/jordi-net/*)`, `Bash(env)`, `Bash(printenv*)`, `Bash(vercel env pull*)`; scripts redact any value matching a secret pattern in their output.
 - Pre-commit secret scan (gitleaks) and GitHub secret scanning with push protection (free for public repos; Jordi enables it).
 - Agents never ask Jordi to paste a secret into chat; setup steps tell him to paste into the provider UI or the local file.
-- A leaked key: Jordi rotates it in the provider; `kill` is set (by Jordi, or by the agent if OQ-11 gave it a key that can) and experiments wait for his confirmation (spec edge case).
+- A leaked key: Jordi rotates it in the provider; `kill` is set (by Jordi in the console, or by the agent with `scripts/kill`) and experiments wait for his confirmation (spec edge case). If the leaked key is `STATSIG_KILL_KEY`, Jordi rotates it before `scripts/kill` is used again.
 
 Sources: https://docs.statsig.com/sdk-keys/api-keys · https://vercel.com/kb/guide/how-do-i-use-a-vercel-api-access-token · https://vercel.com/docs/api · https://docs.railway.com/integrations/api
 
@@ -205,4 +206,4 @@ Sources: https://docs.statsig.com/sdk-keys/api-keys · https://vercel.com/kb/gui
 2. **Independent review agent**: a separate agent session, given only the variant and the policy list (no impersonation of any person or organization; no claim about a named real person or company without a cited source; nothing defamatory, sexual, hateful or political; no spam links; nothing that implies Jordi endorses a product), returns pass/fail with reasons, recorded as a check result. This covers what scripts cannot judge.
 3. **Jordi's approval** of each variant on its pull request (Vercel gives a preview URL per PR). Branch protection on `master` requires his review; CODEOWNERS makes him owner of `experiments/allowed-domains.txt` and of the middleware. The agent never merges.
 
-Emergency stop needs no approval: setting `kill: true` in the Statsig dynamic config serves the control everywhere within the cache lifetime (≤5 minutes).
+Emergency stop needs no approval: setting `kill: true` in the Statsig dynamic config serves the control everywhere within the cache lifetime (≤5 minutes). Jordi can do it in the Statsig console; the agent does it with `scripts/kill` and `STATSIG_KILL_KEY` (OQ-11 decided C). Only Jordi sets `kill` back to `false`.

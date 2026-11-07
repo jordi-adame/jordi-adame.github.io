@@ -31,6 +31,7 @@ Ground rules for every step:
    2. Sign in as that member and create a **personal Console API key**. Personal keys are limited to their owner's role, so this key cannot change anything.
    3. If Statsig offers no read-only role on the free tier, stop here and tell the agent. Do not hand over a full-access key without deciding that on purpose.
 8. Put the read key into your local secret file (§A5) as `STATSIG_CONSOLE_API_KEY`.
+8a. Create the kill key (OQ-11 decided C). Create a Console API key that can write: a personal key of a member with a write role (your own, or a third member made for this). Put it into your local secret file (§A5) as `STATSIG_KILL_KEY`. Only `scripts/kill` uses it, and that script can only set `kill: true`. Statsig cannot limit the key itself, so treat it as a full write key: never paste it anywhere else, and rotate it if it shows up outside that script.
 9. Check for switchback support (V-2): open **New Experiment > Advanced Settings > Experiment Type**. Note whether **Switchback Test** is offered. If it says to contact support, you can ask them to enable randomized switchback bucketing. This step is optional.
 
 ### A2. Vercel (about 20 minutes; hosting decided, OQ-2 A; do this when you give the deploy yes)
@@ -88,6 +89,7 @@ Open the file in your editor and fill in the values. The variable names are:
 
 ```sh
 STATSIG_CONSOLE_API_KEY=
+STATSIG_KILL_KEY=
 GSC_SERVICE_ACCOUNT_JSON=~/.config/jordi-net/gsc-sa.json
 BING_WEBMASTER_API_KEY=
 # only if used:
@@ -120,7 +122,7 @@ A password manager CLI works too, as long as it exports the same variable names 
 |----|----------|----------|
 | B1 | Parity: compare `https://jordi.net` (GitHub Pages) with the Vercel production URL, same path | identical visible HTML apart from host-specific headers (V-3) |
 | B2 | Crawler parity: request an experiment URL with a Googlebot user agent and a Chrome user agent in the same window | byte-identical HTML; both produce `pageview` events with different `client_class` |
-| B3 | Kill switch: set `kill: true` in `site_experiments` | every experiment URL serves control within 10 minutes; `assignment_fallback` not logged (kill is deliberate) |
+| B3 | Kill switch: agent runs `scripts/kill` (sets `kill: true` in `site_experiments`); Jordi turns it off in the console | every experiment URL serves control within 10 minutes; `assignment_fallback` not logged (kill is deliberate) |
 | B4 | Statsig outage: point the middleware at an invalid config in a preview | control is served; `assignment_fallback` is logged |
 | B5 | Readout (V-1): after 3 days in P1, run `scripts/read/statsig` | per-day, per-path counts of human pageviews, crawler hits by bot and AI referrals; or a clear error that triggers the fallback decision |
 | B6 | Search read: run `scripts/read/gsc` | rows for `/` with `complete: true` only for days before `first_incomplete_date` |

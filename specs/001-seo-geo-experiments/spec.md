@@ -139,7 +139,7 @@ Every experiment, variant, approval, check result, data snapshot and decision is
 - **FR-006**: A URL MUST belong to at most one running experiment.
 - **FR-007**: When a variant lives on its own URL, that URL MUST declare the original page as its canonical, and any redirect between variant and original MUST be temporary.
 - **FR-008**: If the experiment platform cannot be reached, every URL MUST serve the control.
-- **FR-009**: Jordi MUST be able to stop any experiment; all its URLs MUST serve the control within 10 minutes. The agent MUST be able to stop too once it holds a key that can set the kill flag (OQ-11); until then it asks Jordi to stop at once and records the request.
+- **FR-009**: Jordi MUST be able to stop any experiment; all its URLs MUST serve the control within 10 minutes. The agent MUST be able to stop too, without asking, through `scripts/kill` and its dedicated Statsig write key (OQ-11 decided C); it records every stop and tells Jordi. The agent MUST NOT use that key for anything else: config changes and starts stay with Jordi.
 
 **Guardrails**
 
@@ -209,7 +209,7 @@ All four use page or time-window units, keep the bio on the home page, and need 
 
 ## Open Questions for Jordi
 
-These are Jordi's decisions. Each has options and a recommendation. OQ-1 and OQ-2 were decided by Jordi on 2026-11-06 (main chat menu, 19:12); OQ-3 to OQ-10 stay on the default in the last column, which applies until he answers.
+These are Jordi's decisions. Each has options and a recommendation. OQ-1 and OQ-2 were decided by Jordi on 2026-11-06 (main chat menu, 19:12), and OQ-11 at 20:04; OQ-3 to OQ-10 stay on the default in the last column, which applies until he answers.
 
 | Id | Question | Options | Recommendation | Decision / default until decided |
 |----|----------|---------|----------------|-----------------------|
@@ -223,7 +223,7 @@ These are Jordi's decisions. Each has options and a recommendation. OQ-1 and OQ-
 | OQ-8 | Where and how often does the agent run? | A: Jordi starts a session when he wants (manual). B: a scheduled cloud routine weekly. C: a scheduled GitHub Action daily for reads only, weekly agent session for decisions. | C once OQ-1 allows; A until then | A |
 | OQ-9 | Statsig was acquired by Amplitude on 2026-05-05 (research.md §R3). Event data (paths, referrer class, bot names; no IPs or visitor IDs) would go to Amplitude-owned infrastructure. Use it as planned? | A: yes, as asked. B: yes, but review again if Amplitude announces a Statsig sunset or pricing change. C: use another experiment tool. | B (assignment lives in repo files, so Statsig stays replaceable) | A, as Jordi asked |
 | OQ-10 | Which AI crawlers may fetch the site? | A: all, as today (no robots.txt). B: AI-search and user-triggered bots yes, training crawlers (GPTBot, ClaudeBot, CCBot, meta-externalagent) no. C: none. | A (GEO needs the fetches; the content is public bio facts) | A (today's state) |
-| OQ-11 | Found while writing tasks: the agent's Statsig key is read-only (research.md §R9), so it cannot flip the kill flag or write the assignment config itself. Give it write access? | A: no; Jordi applies every config change and every stop in the Statsig console (the agent prepares the JSON). B: a second Statsig member with write role for the agent, its personal key in the local secret file, used only by `scripts/sync-config` and `scripts/kill`. C: as B, but only for `kill`; config changes stay with Jordi. | C (fast stops without letting the agent start things) | A |
+| OQ-11 | Found while writing tasks: the agent's Statsig key is read-only (research.md §R9), so it cannot flip the kill flag or write the assignment config itself. Give it write access? | A: no; Jordi applies every config change and every stop in the Statsig console (the agent prepares the JSON). B: a second Statsig member with write role for the agent, its personal key in the local secret file, used only by `scripts/sync-config` and `scripts/kill`. C: as B, but only for `kill`; config changes stay with Jordi. | C (fast stops without letting the agent start things) | **Decided 2026-11-06 20:04: C.** A Statsig write key is used only by `scripts/kill`. Config changes and starts stay with Jordi. Jordi creates the key and places it in `~/.config/jordi-net/secrets.env`. |
 
 ## Assumptions
 
