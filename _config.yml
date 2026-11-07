@@ -1,1 +1,19 @@
 theme: jekyll-theme-midnight
+
+# Keep repo tooling and specs off the published site (jordi.net).
+# Jekyll 3.x (GitHub Pages) replaces its default exclude list when this key
+# is set, so the defaults (Gemfile, node_modules, vendor/...) are repeated here.
+exclude:
+  - specs/
+  - CLAUDE.md
+  - AGENTS.md
+  - README.md
+  - .specify/
+  - .claude/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/

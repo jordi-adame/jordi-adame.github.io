@@ -1,0 +1,7 @@
+# Claude Code machine-local state (worktrees, personal settings).
+.claude/worktrees/
+.claude/settings.local.json
+# Jekyll build output.
+_site/
+.jekyll-cache/
+.jekyll-metadata
